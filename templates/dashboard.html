@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - SentimentScope</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Risultati per: {{ keyword }}</h1>
+
+    <h2>Post analizzati:</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Titolo</th>
+                <th>Sentiment</th>
+                <th>Subreddit</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in posts %}
+            <tr>
+                <td>{{ post.title }}</td>
+                <td>{{ post.sentiment }}</td>
+                <td>{{ post.subreddit }}</td>
+                <td>{{ post.date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Grafico Sentiment:</h2>
+    <canvas id="sentimentChart" width="400" height="200"></canvas>
+    <script>
+        // Usa la variabile posts_json passata da Flask
+        const postsData = JSON.parse('{{ posts_json }}');
+        let positive = 0;
+        let neutral = 0;
+        let negative = 0;
+
+        postsData.forEach(post => {
+            if (post.sentiment === "Positivo") positive++;
+            else if (post.sentiment === "Neutro") neutral++;
+            else negative++;
+        });
+
+        const data = {
+            labels: ["Positivo", "Neutro", "Negativo"],
+            datasets: [{
+                data: [positive, neutral, negative],
+                backgroundColor: ["green", "gray", "red"]
+            }]
+        };
+        const ctx = document.getElementById("sentimentChart").getContext("2d");
+        new Chart(ctx, { type: "pie", data: data });
+    </script>
+</body>
+</html>
