@@ -1,8 +1,5 @@
 import sqlite3
-import os
-from datetime import datetime
 
-# Crea il database e la tabella se non esistono
 def init_db():
     conn = sqlite3.connect("sentimentscope.db")
     cursor = conn.cursor()
@@ -15,29 +12,42 @@ def init_db():
             subreddit TEXT,
             score INTEGER,
             date DATETIME,
-            link TEXT
+            link TEXT,
+            keyword TEXT
         )
     """)
     conn.commit()
     conn.close()
 
-# Salva un post nel database
-def save_post(title, text, sentiment, subreddit, score, date, link):
+def save_post(title, text, sentiment, subreddit, score, date, link, keyword):
     try:
         conn = sqlite3.connect("sentimentscope.db")
         cursor = conn.cursor()
+        # evita duplicati controllando il link
+        cursor.execute("SELECT id FROM Posts WHERE link = ?", (link,))
+        if cursor.fetchone():
+            print("Post già presente, skip.")
+            conn.close()
+            return
         cursor.execute(
-            """INSERT INTO Posts (title, text, sentiment, subreddit, score, date, link)
-            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (title, text, sentiment, subreddit, score, date, link)
+            """INSERT INTO Posts (title, text, sentiment, subreddit, score, date, link, keyword)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (title, text, sentiment, subreddit, score, date, link, keyword)
         )
         conn.commit()
         conn.close()
-        print("Post salvato nel database SQLite.")
+        print("Post salvato.")
     except Exception as e:
-        print(f"Errore nel salvataggio del post: {e}")
+        print(f"Errore nel salvataggio: {e}")
 
-# Recupera tutti i post dal database
+def get_posts_by_keyword(keyword):
+    conn = sqlite3.connect("sentimentscope.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Posts WHERE keyword = ?", (keyword,))
+    posts = cursor.fetchall()
+    conn.close()
+    return posts
+
 def get_all_posts():
     conn = sqlite3.connect("sentimentscope.db")
     cursor = conn.cursor()
@@ -46,5 +56,4 @@ def get_all_posts():
     conn.close()
     return posts
 
-# Inizializza il database
 init_db()
