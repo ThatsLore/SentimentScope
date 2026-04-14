@@ -1,14 +1,350 @@
 <!DOCTYPE html>
-<html>
+<html lang="it" data-theme="dark">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SentimentScope</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root[data-theme="dark"] {
+            --bg: #080C14;
+            --bg-card: #0E1420;
+            --bg-input: #131A28;
+            --border: rgba(255,255,255,0.07);
+            --text-primary: #F0F4FF;
+            --text-secondary: #6B7FA3;
+            --accent: #4F8EF7;
+            --accent-glow: rgba(79,142,247,0.25);
+            --accent-2: #38D9A9;
+            --dot: rgba(79,142,247,0.15);
+            --toggle-bg: #0E1420;
+        }
+        :root[data-theme="light"] {
+            --bg: #F5F7FF;
+            --bg-card: #FFFFFF;
+            --bg-input: #EEF1FB;
+            --border: rgba(0,0,0,0.08);
+            --text-primary: #0A0F1E;
+            --text-secondary: #6B7FA3;
+            --accent: #3B72E8;
+            --accent-glow: rgba(59,114,232,0.15);
+            --accent-2: #0DB88A;
+            --dot: rgba(59,114,232,0.12);
+            --toggle-bg: #E4E9F7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s, color 0.3s;
+            overflow: hidden;
+        }
+
+        /* dot grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* glow blob */
+        body::after {
+            content: '';
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 100;
+            background: var(--toggle-bg);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 0.35rem;
+            display: flex;
+            gap: 0.2rem;
+            cursor: pointer;
+        }
+        .theme-btn {
+            background: none;
+            border: none;
+            padding: 0.35rem 0.7rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .theme-btn.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* main card */
+        .card {
+            position: relative;
+            z-index: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem 3.5rem;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.15);
+            animation: fadeUp 0.6s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-icon svg { width: 22px; height: 22px; fill: #fff; }
+        .logo-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.75rem;
+        }
+        h1 span {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+        }
+
+        /* pills */
+        .pills {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 2.5rem;
+        }
+        .pill {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 0.3rem 0.85rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        .pill.accent { border-color: var(--accent); color: var(--accent); }
+
+        /* form */
+        .search-form { display: flex; flex-direction: column; gap: 0.85rem; }
+
+        .input-wrap {
+            position: relative;
+        }
+        .input-wrap svg {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            stroke: var(--text-secondary);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+        input[type="text"] {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.9rem 1rem 0.9rem 2.75rem;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]::placeholder { color: var(--text-secondary); }
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .suggestions {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .suggestion {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.15s;
+        }
+        .suggestion:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        button[type="submit"] {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 0.95rem;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px var(--accent-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        button[type="submit"]:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 28px var(--accent-glow);
+        }
+        button[type="submit"] svg {
+            width: 16px; height: 16px;
+            stroke: #fff; fill: none;
+            stroke-width: 2.5; stroke-linecap: round;
+        }
+
+        .footer-note {
+            margin-top: 1.75rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .footer-note span { color: var(--accent); }
+    </style>
 </head>
 <body>
-    <h1>SentimentScope</h1>
-    <form action="/" method="post">
-        <input type="text" name="keyword" placeholder="Inserisci una parola chiave (es. 'AI')" required>
-        <button type="submit">Analizza</button>
+
+<div class="theme-toggle">
+    <button class="theme-btn active" id="btn-dark" onclick="setTheme('dark')">Dark</button>
+    <button class="theme-btn" id="btn-light" onclick="setTheme('light')">Light</button>
+</div>
+
+<div class="card">
+    <div class="logo-row">
+        <div class="logo-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+        </div>
+        <span class="logo-name">SentimentScope</span>
+    </div>
+
+    <h1>Analizza il<br><span>sentiment</span> online</h1>
+    <p class="subtitle">Inserisci una parola chiave per raccogliere e analizzare il sentiment delle discussioni su Reddit in tempo reale.</p>
+
+    <div class="pills">
+        <span class="pill accent">Reddit API</span>
+        <span class="pill">VADER NLP</span>
+        <span class="pill">Chart.js</span>
+        <span class="pill">Flask</span>
+    </div>
+
+    <form class="search-form" action="/" method="post">
+        <div class="input-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" name="keyword" id="keyword-input" placeholder="Es. Artificial Intelligence, Climate Change…" required>
+        </div>
+
+        <div class="suggestions">
+            <span class="suggestion" onclick="fillKeyword('Artificial Intelligence')">AI</span>
+            <span class="suggestion" onclick="fillKeyword('Climate Change')">Climate Change</span>
+            <span class="suggestion" onclick="fillKeyword('Cryptocurrency')">Crypto</span>
+            <span class="suggestion" onclick="fillKeyword('Mental Health')">Mental Health</span>
+            <span class="suggestion" onclick="fillKeyword('Space Exploration')">Space</span>
+        </div>
+
+        <button type="submit">
+            Analizza
+            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
     </form>
+
+    <p class="footer-note">Progetto di Maturità · Caminotto Lorenzo</p>
+</div>
+
+<script>
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('btn-dark').classList.toggle('active', theme === 'dark');
+    document.getElementById('btn-light').classList.toggle('active', theme === 'light');
+    localStorage.setItem('ss-theme', theme);
+}
+function fillKeyword(kw) {
+    document.getElementById('keyword-input').value = kw;
+    document.getElementById('keyword-input').focus();
+}
+// restore saved theme
+const saved = localStorage.getItem('ss-theme');
+if (saved) setTheme(saved);
+</script>
 </body>
 </html>

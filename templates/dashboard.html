@@ -1,67 +1,501 @@
 <!DOCTYPE html>
-<html>
+<html lang="it" data-theme="dark">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SentimentScope – {{ keyword }}</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root[data-theme="dark"] {
+            --bg: #080C14;
+            --bg-card: #0E1420;
+            --bg-input: #131A28;
+            --bg-row-alt: rgba(255,255,255,0.02);
+            --border: rgba(255,255,255,0.07);
+            --text-primary: #F0F4FF;
+            --text-secondary: #6B7FA3;
+            --accent: #4F8EF7;
+            --accent-glow: rgba(79,142,247,0.2);
+            --accent-2: #38D9A9;
+            --dot: rgba(79,142,247,0.12);
+            --toggle-bg: #0E1420;
+            --pos: #38D9A9;
+            --neg: #F76F6F;
+            --neu: #6B7FA3;
+            --pos-bg: rgba(56,217,169,0.1);
+            --neg-bg: rgba(247,111,111,0.1);
+            --neu-bg: rgba(107,127,163,0.1);
+        }
+        :root[data-theme="light"] {
+            --bg: #F5F7FF;
+            --bg-card: #FFFFFF;
+            --bg-input: #EEF1FB;
+            --bg-row-alt: rgba(0,0,0,0.02);
+            --border: rgba(0,0,0,0.07);
+            --text-primary: #0A0F1E;
+            --text-secondary: #6B7FA3;
+            --accent: #3B72E8;
+            --accent-glow: rgba(59,114,232,0.15);
+            --accent-2: #0DB88A;
+            --dot: rgba(59,114,232,0.1);
+            --toggle-bg: #E4E9F7;
+            --pos: #0DB88A;
+            --neg: #E04848;
+            --neu: #6B7FA3;
+            --pos-bg: rgba(13,184,138,0.1);
+            --neg-bg: rgba(224,72,72,0.1);
+            --neu-bg: rgba(107,127,163,0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* NAV */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+        }
+        .nav-left { display: flex; align-items: center; gap: 1.5rem; }
+        .logo-row { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text-primary); }
+        .logo-icon {
+            width: 30px; height: 30px; border-radius: 8px;
+            background: var(--accent);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-icon svg { width: 16px; height: 16px; fill: #fff; }
+        .logo-name { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; }
+
+        .nav-form { display: flex; gap: 0.5rem; }
+        .nav-form input {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.4rem 0.85rem;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            width: 220px;
+            transition: border-color 0.2s;
+        }
+        .nav-form input:focus { border-color: var(--accent); }
+        .nav-form button {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.4rem 1rem;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .nav-form button:hover { opacity: 0.88; }
+
+        .theme-toggle {
+            background: var(--toggle-bg);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 0.25rem;
+            display: flex;
+            gap: 0.15rem;
+        }
+        .theme-btn {
+            background: none; border: none;
+            padding: 0.25rem 0.65rem;
+            border-radius: 50px;
+            font-size: 0.72rem;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .theme-btn.active { background: var(--accent); color: #fff; }
+
+        /* MAIN */
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* header */
+        .page-header {
+            margin-bottom: 2rem;
+            animation: fadeUp 0.4s ease both;
+        }
+        .keyword-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--accent-glow);
+            border: 1px solid var(--accent);
+            border-radius: 50px;
+            padding: 0.25rem 0.85rem;
+            font-size: 0.78rem;
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+        .page-header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+        .page-header h1 span {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* STAT CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeUp 0.4s 0.1s ease both;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        .stat-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+        .stat-value.pos { color: var(--pos); }
+        .stat-value.neg { color: var(--neg); }
+        .stat-value.neu { color: var(--neu); }
+
+        /* CONTENT GRID */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            animation: fadeUp 0.4s 0.2s ease both;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .panel-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        .chart-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+
+        /* LEGEND */
+        .legend { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+        .legend-item { display: flex; align-items: center; justify-content: space-between; }
+        .legend-left { display: flex; align-items: center; gap: 0.6rem; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .legend-name { font-size: 0.85rem; color: var(--text-secondary); }
+        .legend-pct {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        /* TABLE */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            padding: 0 1rem 0.85rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 0.85rem 1rem 0.85rem 0;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: var(--bg-row-alt); }
+
+        .title-cell {
+            max-width: 320px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
+        .sub-cell { color: var(--text-secondary); font-size: 0.82rem; }
+        .score-cell { font-family: 'Syne', sans-serif; font-weight: 700; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            border-radius: 50px;
+            padding: 0.2rem 0.7rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-pos { background: var(--pos-bg); color: var(--pos); }
+        .badge-neg { background: var(--neg-bg); color: var(--neg); }
+        .badge-neu { background: var(--neu-bg); color: var(--neu); }
+        .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .content-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-    <h1>SentimentScope</h1>
 
-    <form action="/" method="post">
-        <input type="text" name="keyword" placeholder="Nuova ricerca..." required>
-        <button type="submit">Analizza</button>
-    </form>
+<nav>
+    <div class="nav-left">
+        <a class="logo-row" href="/">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+            </div>
+            <span class="logo-name">SentimentScope</span>
+        </a>
+        <form class="nav-form" action="/" method="post">
+            <input type="text" name="keyword" placeholder="Nuova ricerca…" required>
+            <button type="submit">Analizza</button>
+        </form>
+    </div>
+    <div class="theme-toggle">
+        <button class="theme-btn active" id="btn-dark" onclick="setTheme('dark')">Dark</button>
+        <button class="theme-btn" id="btn-light" onclick="setTheme('light')">Light</button>
+    </div>
+</nav>
 
-    <h2>Risultati per: "{{ keyword }}"</h2>
-    <p>Post analizzati: {{ posts|length }}</p>
-
-    <div class="chart-container" style="width: 300px; height: 300px;">
-        <canvas id="sentimentChart"></canvas>
+<main>
+    <div class="page-header">
+        <div class="keyword-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            {{ keyword }}
+        </div>
+        <h1>Risultati per <span>"{{ keyword }}"</span></h1>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Titolo</th>
-                <th>Subreddit</th>
-                <th>Sentiment</th>
-                <th>Score</th>
-                <th>Data</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for post in posts %}
-            <tr class="sentiment-{{ post.sentiment | lower }}">
-                <td>{{ post.title }}</td>
-                <td>r/{{ post.subreddit }}</td>
-                <td>{{ post.sentiment }}</td>
-                <td>{{ post.score }}</td>
-                <td>{{ post.date }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Post analizzati</div>
+            <div class="stat-value">{{ posts|length }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Positivi</div>
+            <div class="stat-value pos" id="count-pos">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Negativi</div>
+            <div class="stat-value neg" id="count-neg">—</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Neutri</div>
+            <div class="stat-value neu" id="count-neu">—</div>
+        </div>
+    </div>
 
-    <script>
-        const counts = {{ sentiment_counts | tojson }};
-        const ctx = document.getElementById("sentimentChart").getContext("2d");
-        new Chart(ctx, {
-            type: "pie",
-            data: {
-                labels: ["Positivo", "Negativo", "Neutro"],
-                datasets: [{
-                    data: [counts.Positivo, counts.Negativo, counts.Neutro],
-                    backgroundColor: ["#4caf50", "#f44336", "#9e9e9e"]
-                }]
-            },
-            options: {
-                responsive: false,
-                plugins: {
-                    legend: { position: "bottom" }
-                }
-            }
-        });
-    </script>
+    <!-- CHART + TABLE -->
+    <div class="content-grid">
+        <!-- chart panel -->
+        <div class="panel">
+            <div class="panel-title">Distribuzione sentiment</div>
+            <div class="chart-wrap">
+                <canvas id="sentimentChart" width="240" height="240"></canvas>
+            </div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-left">
+                        <div class="legend-dot" style="background:var(--pos)"></div>
+                        <span class="legend-name">Positivo</span>
+                    </div>
+                    <span class="legend-pct pos" id="pct-pos">—</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-left">
+                        <div class="legend-dot" style="background:var(--neg)"></div>
+                        <span class="legend-name">Negativo</span>
+                    </div>
+                    <span class="legend-pct neg" id="pct-neg">—</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-left">
+                        <div class="legend-dot" style="background:var(--neu)"></div>
+                        <span class="legend-name">Neutro</span>
+                    </div>
+                    <span class="legend-pct neu" id="pct-neu">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- table panel -->
+        <div class="panel">
+            <div class="panel-title">Post analizzati</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Titolo</th>
+                            <th>Subreddit</th>
+                            <th>Sentiment</th>
+                            <th>Score</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in posts %}
+                        <tr>
+                            <td class="title-cell" title="{{ post.title }}">{{ post.title }}</td>
+                            <td class="sub-cell">r/{{ post.subreddit }}</td>
+                            <td>
+                                {% if post.sentiment == 'Positivo' %}
+                                <span class="badge badge-pos">Positivo</span>
+                                {% elif post.sentiment == 'Negativo' %}
+                                <span class="badge badge-neg">Negativo</span>
+                                {% else %}
+                                <span class="badge badge-neu">Neutro</span>
+                                {% endif %}
+                            </td>
+                            <td class="score-cell">{{ post.score }}</td>
+                            <td class="sub-cell">{{ post.date[:10] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+// theme
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('btn-dark').classList.toggle('active', theme === 'dark');
+    document.getElementById('btn-light').classList.toggle('active', theme === 'light');
+    localStorage.setItem('ss-theme', theme);
+    updateChartColors();
+}
+const saved = localStorage.getItem('ss-theme');
+if (saved) setTheme(saved);
+
+// data
+const counts = {{ sentiment_counts | tojson }};
+const total = (counts.Positivo || 0) + (counts.Negativo || 0) + (counts.Neutro || 0);
+
+document.getElementById('count-pos').textContent = counts.Positivo || 0;
+document.getElementById('count-neg').textContent = counts.Negativo || 0;
+document.getElementById('count-neu').textContent = counts.Neutro || 0;
+
+function pct(n) { return total ? Math.round((n / total) * 100) + '%' : '0%'; }
+document.getElementById('pct-pos').textContent = pct(counts.Positivo || 0);
+document.getElementById('pct-neg').textContent = pct(counts.Negativo || 0);
+document.getElementById('pct-neu').textContent = pct(counts.Neutro || 0);
+
+// chart
+function getCSSVar(v) {
+    return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+}
+
+let chart;
+function buildChart() {
+    const ctx = document.getElementById('sentimentChart').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Positivo', 'Negativo', 'Neutro'],
+            datasets: [{
+                data: [counts.Positivo || 0, counts.Negativo || 0, counts.Neutro || 0],
+                backgroundColor: [getCSSVar('--pos'), getCSSVar('--neg'), getCSSVar('--neu')],
+                borderWidth: 0,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: false,
+            cutout: '72%',
+            plugins: { legend: { display: false }, tooltip: { callbacks: {
+                label: ctx => ` ${ctx.label}: ${ctx.parsed} post (${pct(ctx.parsed)})`
+            }}}
+        }
+    });
+}
+
+function updateChartColors() {
+    setTimeout(buildChart, 50);
+}
+
+buildChart();
+</script>
 </body>
 </html>
