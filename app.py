@@ -24,7 +24,7 @@ def dashboard(keyword):
             text = post_data["selftext"]
 
             combined = title + " " + text
-            if len(combined.split()) < 25:
+            if len(combined.split()) < 10:
                 continue
 
             sentiment = analyze_sentiment(combined)
@@ -45,7 +45,8 @@ def dashboard(keyword):
             "sentiment": post[3],
             "subreddit": post[4],
             "score": post[5],
-            "date": str(post[6])
+            "date": str(post[6]),
+            "link": post[7]
         })
 
     return render_template(

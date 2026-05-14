@@ -67,6 +67,13 @@
 
         .stat-card.clickable { cursor: pointer; transition: border-color 0.2s; }
         .stat-card.clickable:hover { border-color: var(--accent); }
+
+        .title-link {
+            color: inherit;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .title-link:hover { color: var(--accent); }
     </style>
 </head>
 <body>
@@ -182,7 +189,9 @@
                     <tbody id="table-body">
                         {% for post in posts %}
                         <tr data-sentiment="{{ post.sentiment }}" data-score="{{ post.score }}" data-date="{{ post.date[:10] }}">
-                            <td class="title-cell" title="{{ post.title }}">{{ post.title }}</td>
+                            <td class="title-cell" title="{{ post.title }}">
+                                <a class="title-link" href="{{ post.link }}" target="_blank">{{ post.title }}</a>
+                            </td>
                             <td class="sub-cell">r/{{ post.subreddit }}</td>
                             <td>
                                 {% if post.sentiment == 'Positivo' %}
@@ -206,7 +215,6 @@
 </main>
 
 <script>
-// ── THEME ──
 function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     document.getElementById('btn-dark').classList.toggle('active', theme === 'dark');
@@ -217,7 +225,6 @@ function setTheme(theme) {
 const saved = localStorage.getItem('ss-theme');
 if (saved) setTheme(saved);
 
-// ── DATI ──
 const counts = {{ sentiment_counts | tojson }};
 const total = (counts.Positivo || 0) + (counts.Negativo || 0) + (counts.Neutro || 0);
 
@@ -230,10 +237,10 @@ document.getElementById('pct-pos').textContent = pct(counts.Positivo || 0);
 document.getElementById('pct-neg').textContent = pct(counts.Negativo || 0);
 document.getElementById('pct-neu').textContent = pct(counts.Neutro || 0);
 
-// ── CHART ──
 function getCSSVar(v) {
     return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 }
+
 let chart;
 function buildChart() {
     const ctx = document.getElementById('sentimentChart').getContext('2d');
@@ -261,7 +268,6 @@ function buildChart() {
 function updateChartColors() { setTimeout(buildChart, 50); }
 buildChart();
 
-// ── HIGHLIGHT post con score più alto e più basso ──
 function highlightExtremes() {
     const rows = Array.from(document.querySelectorAll('#table-body tr'));
     rows.forEach(r => r.classList.remove('highlight-row'));
@@ -277,32 +283,32 @@ function highlightExtremes() {
     });
 }
 
-// ── FILTRO ──
 let currentFilter = 'Tutti';
-function filterTable(sentiment) {
-    currentFilter = sentiment;
+
+function applyFilters() {
     const rows = document.querySelectorAll('#table-body tr');
     let visible = 0;
     rows.forEach(row => {
-        const show = sentiment === 'Tutti' || row.dataset.sentiment === sentiment;
+        const show = currentFilter === 'Tutti' || row.dataset.sentiment === currentFilter;
         row.style.display = show ? '' : 'none';
         if (show) visible++;
     });
     document.getElementById('no-results').style.display = visible === 0 ? 'block' : 'none';
-
-    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-    const map = { 'Tutti': 0, 'Positivo': 1, 'Negativo': 2, 'Neutro': 3 };
-    document.querySelectorAll('.filter-btn')[map[sentiment]]?.classList.add('active');
-
     highlightExtremes();
 }
 
-// ── ORDINAMENTO ──
+function filterTable(sentiment) {
+    currentFilter = sentiment;
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    const map = { 'Tutti': 0, 'Positivo': 1, 'Negativo': 2, 'Neutro': 3 };
+    document.querySelectorAll('.filter-btn')[map[sentiment]]?.classList.add('active');
+    applyFilters();
+}
+
 function sortTable(criteria) {
     const tbody = document.getElementById('table-body');
     const rows = Array.from(tbody.querySelectorAll('tr'));
     const sentimentOrder = { 'Positivo': 0, 'Neutro': 1, 'Negativo': 2 };
-
     rows.sort((a, b) => {
         if (criteria === 'score-desc') return parseInt(b.dataset.score) - parseInt(a.dataset.score);
         if (criteria === 'score-asc')  return parseInt(a.dataset.score) - parseInt(b.dataset.score);
@@ -311,12 +317,11 @@ function sortTable(criteria) {
         if (criteria === 'sentiment')  return sentimentOrder[a.dataset.sentiment] - sentimentOrder[b.dataset.sentiment];
         return 0;
     });
-
     rows.forEach(r => tbody.appendChild(r));
-    filterTable(currentFilter);
+    applyFilters();
 }
 
-highlightExtremes();
+applyFilters();
 </script>
 </body>
 </html>
