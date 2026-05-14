@@ -1,7 +1,6 @@
 import requests
 import os
 from dotenv import load_dotenv
-from mock_data import get_mock_posts
 
 load_dotenv()
 
@@ -23,6 +22,11 @@ def get_reddit_token():
         return None
 
 def get_reddit_posts(keyword, limit=20):
-    # USA MOCK DATA finché l'API Reddit non è approvata
-    print(f"[MOCK] Returning mock data for keyword: {keyword}")
-    return get_mock_posts()
+    url = f"https://www.reddit.com/search.json?q={keyword}&limit={limit}&sort=relevance"
+    headers = {"User-Agent": "SentimentScope/1.0"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Errore: {response.status_code}")
+        return None

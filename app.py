@@ -18,14 +18,20 @@ def index():
 def dashboard(keyword):
     posts_data = get_reddit_posts(keyword)
     if posts_data:
-        for post in posts_data:
-            title = post["title"]
-            text = post["selftext"]
-            sentiment = analyze_sentiment(title + " " + text)
-            subreddit = post["subreddit"]
-            score = post["score"]
-            date = datetime.fromtimestamp(post["created_utc"])
-            link = post["url"]
+        for post in posts_data["data"]["children"]:
+            post_data = post["data"]
+            title = post_data["title"]
+            text = post_data["selftext"]
+
+            combined = title + " " + text
+            if len(combined.split()) < 25:
+                continue
+
+            sentiment = analyze_sentiment(combined)
+            subreddit = post_data["subreddit"]
+            score = post_data["score"]
+            date = datetime.fromtimestamp(post_data["created_utc"])
+            link = post_data["url"]
             save_post(title, text, sentiment, subreddit, score, date, link, keyword)
 
     posts = get_posts_by_keyword(keyword)
